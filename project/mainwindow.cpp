@@ -129,12 +129,12 @@ void MainWindow::init()
 
     // 设置窗口标题
     QDateTime dt = QDateTime::fromTime_t( (uint)getDateFromMacro(__DATE__));
-    this->setWindowTitle("sscom for linux " + dt.toString("yyyy/MM")); //
+    this->setWindowTitle("Linux Serial Tools"); //
 
     // 状态
     isOn = false;
     mLedLabel->setPixmap(QPixmap(":/led/off"));
-    mOpenFileLineEdit->setText(tr("文件名"));
+    mOpenFileLineEdit->setText(tr("qitas"));
     mFilePath = ui->openfile_lineEdit->text();
     mTimerSendLineEdit->setValidator(numberOnlyValidator);
 
@@ -169,7 +169,7 @@ void MainWindow::init()
     mFinallyLabel = new QLabel;
     mFinallyLabel->setMinimumSize(160, 14); // 设置标签最小大小
     mFinallyLabel->setAlignment(Qt::AlignLeft);
-    mFinallyLabel->setText("CTS:0  DSR:0  RLSD:0 ");
+    mFinallyLabel->setText(" CTS:0  DSR:0  RLSD:0 ");
     mFinallyLabel->setFont(font);
 
     mStatusBar->addWidget(mNetAddrLabel);
