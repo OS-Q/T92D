@@ -129,19 +129,19 @@ void MainWindow::init()
 
     // 设置窗口标题
     QDateTime dt = QDateTime::fromTime_t( (uint)getDateFromMacro(__DATE__));
-    this->setWindowTitle("Linux Serial Tools"); //
+    this->setWindowTitle("sscom for linux " + dt.toString("yyyy/MM")); //
 
     // 状态
     isOn = false;
     mLedLabel->setPixmap(QPixmap(":/led/off"));
-    mOpenFileLineEdit->setText(tr("qitas"));
+    mOpenFileLineEdit->setText(tr("文件名"));
     mFilePath = ui->openfile_lineEdit->text();
     mTimerSendLineEdit->setValidator(numberOnlyValidator);
 
     // 网址
     mNetAddrLabel = new QLabel;
     mNetAddrLabel->setMinimumSize(80, 14); // 设置标签最小大小
-    mNetAddrLabel->setText("mcuyun.com");
+    mNetAddrLabel->setText("www.OS-Q.com");
     mNetAddrLabel->setAlignment(Qt::AlignHCenter);
     mNetAddrLabel->setFont(font);
 
@@ -169,7 +169,7 @@ void MainWindow::init()
     mFinallyLabel = new QLabel;
     mFinallyLabel->setMinimumSize(160, 14); // 设置标签最小大小
     mFinallyLabel->setAlignment(Qt::AlignLeft);
-    mFinallyLabel->setText(" CTS:0  DSR:0  RLSD:0 ");
+    mFinallyLabel->setText("CTS:0  DSR:0  RLSD:0 ");
     mFinallyLabel->setFont(font);
 
     mStatusBar->addWidget(mNetAddrLabel);
@@ -653,6 +653,17 @@ void MainWindow::onSendButtonRelease()
     writeData();
 }
 
+/**
+ * bytesToHex
+ * @brief bytesToHex
+ * @param array
+ * @return
+ */
+static QString bytesToHex(QByteArray array) {
+    QString hex = array.toHex().toUpper();
+    return hex.replace(QRegularExpression("(.{2})"), "\\1 ");
+}
+
 /** 发送数据 */
 void MainWindow::writeData()
 {
@@ -666,6 +677,7 @@ void MainWindow::writeData()
         text += "\r\n";
 
     QByteArray data = text.toLatin1();
+    qDebug() << "writeData: " << bytesToHex(data);
     qint32 len = serial->write(data);
     // 更新显示长度
     if(len >= 0) {
@@ -674,31 +686,36 @@ void MainWindow::writeData()
     }
     if(DEBUG) qDebug() <<"currentSettings.sendNum:" << currentSettings.sendNum;
 }
+
+qint64 lastTimestamp = 0;
+
 //! [6]
 //! [7]
 void MainWindow::readData()
 {
+    // 1.处理换行 距离上次接收间100ms换行
+    qint64 timestamp = QDateTime::currentDateTime().toMSecsSinceEpoch();
+    if ((timestamp - lastTimestamp) > 100 && currentSettings.receiveNum > 0) {
+        ui->receive_textBrowser->insertPlainText("\n");
+    }
+    lastTimestamp = timestamp;
+
+    // 2.读取数据
     QByteArray data = serial->readAll();
     QString str = QString::fromLatin1(data.data());
-    QString res = str.toLatin1().toHex().toUpper();
-    QString a = ui->receive_textBrowser->toPlainText();
-    ui->receive_textBrowser->setText(a + data);
+    QString hex = bytesToHex(data);
+    QString newStr = currentSettings.isHexDisplay ? hex : str;
+    ui->receive_textBrowser->moveCursor (QTextCursor::End);
+    ui->receive_textBrowser->insertPlainText(newStr);
+    ui->receive_textBrowser->moveCursor (QTextCursor::End);
 
-    // 更新显示长度
+    // 3.更新显示长度
     qint32 len = data.length();
     if(DEBUG) qDebug() <<"len:" << len;
     if(len >= 0) {
         currentSettings.receiveNum += len;
         currentIndexChanged();
     }
-
-
-    // 根据设置来判断是否需要转换成HEX
-
-    // 将光标移动到最后位置
-    QTextCursor tmpCursor = ui->receive_textBrowser->textCursor();
-    tmpCursor.movePosition(QTextCursor::End, QTextCursor::MoveAnchor, 4);
-    ui->receive_textBrowser->setTextCursor(tmpCursor);
 }
 //! [7]
 
